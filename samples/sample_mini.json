@@ -1,0 +1,16 @@
+{
+  "id": "set_sample_mini",
+  "name": "サンプルかるた（5枚）",
+  "description": "形式確認用の最小サンプル。画像はエディタの「未設定の画像を自動生成」で作れます。",
+  "version": 1,
+  "createdAt": "2026-08-16T00:00:00.000Z",
+  "updatedAt": "2026-08-16T00:00:00.000Z",
+  "cards": [
+    { "id": "card_a", "order": 0, "kana": "あ", "yomi": "朝日に映える 赤城山", "yomiKana": "あさひにはえる あかぎやま", "meta": { "emblem": "⛰️" } },
+    { "id": "card_i", "order": 1, "kana": "い", "yomi": "いちごの里で 春を待つ", "meta": { "emblem": "🍓" } },
+    { "id": "card_u", "order": 2, "kana": "う", "yomi": "海なし県の 川あそび", "meta": { "emblem": "🏞️" } },
+    { "id": "card_e", "order": 3, "kana": "え", "yomi": "駅前広場で ひと休み", "meta": { "emblem": "🚉" } },
+    { "id": "card_o", "order": 4, "kana": "お", "yomi": "温泉めぐりで 心ぽかぽか", "meta": { "emblem": "♨️" } }
+  ],
+  "voiceConfig": { "rate": 1.0 }
+}
