@@ -3,6 +3,7 @@
  * 自作画像を用意しないカード（ダミー・サンプル・プレースホルダー）に使う。
  */
 import type { Card } from '../domain/card'
+import { badgeOf } from '../domain/card'
 
 export interface CardStyle {
   width: number
@@ -124,22 +125,11 @@ export async function renderEfuda(card: Card, opts: EfudaOptions = {}): Promise<
   roundRect(ctx, 22, 22, st.width - 44, st.height - 44, 12)
   ctx.stroke()
 
-  // 頭文字（左上の丸）
-  const r = st.width * 0.13
-  ctx.fillStyle = '#fff'
-  ctx.beginPath()
-  ctx.arc(40 + r, 40 + r, r, 0, Math.PI * 2)
-  ctx.fill()
-  ctx.strokeStyle = st.accent
-  ctx.lineWidth = 4
-  ctx.stroke()
-  ctx.fillStyle = st.accent
-  ctx.font = `bold ${Math.floor(r * 1.3)}px ${st.fontFamily}`
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'middle'
-  ctx.fillText(card.kana, 40 + r, 40 + r + 2)
+  // 頭文字バッジはここでは描かない（オーバーレイ表示 / composeEfudaPng で合成）
 
   // 中央エンブレム
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
   const emblem = opts.emblem ?? card.kana
   ctx.fillStyle = st.textColor
   ctx.font = `bold ${Math.floor(st.width * (emblem.length > 2 ? 0.22 : 0.5))}px ${st.fontFamily}`
@@ -213,6 +203,56 @@ export async function renderYomifuda(card: Card, opts: YomifudaOptions = {}): Pr
   ctx.fillStyle = st.accent
   ctx.fillText(card.kana, st.width - 50, 50)
 
+  return toDataUrl(canvas)
+}
+
+/** canvas に頭文字バッジを描く（composeEfudaPng 用） */
+function drawKanaBadge(
+  ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
+  card: Card,
+  w: number,
+  h: number,
+  style: CardStyle,
+) {
+  const badge = badgeOf(card)
+  if (!badge.show || !card.kana) return
+  const r = w * badge.size
+  const cx = w * badge.x
+  const cy = h * badge.y
+  ctx.fillStyle = '#fff'
+  ctx.beginPath()
+  ctx.arc(cx, cy, r, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.strokeStyle = style.accent
+  ctx.lineWidth = Math.max(2, r * 0.09)
+  ctx.stroke()
+  ctx.fillStyle = style.accent
+  ctx.font = `bold ${Math.floor(r * 1.3)}px ${style.fontFamily}`
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText(card.kana, cx, cy + r * 0.05)
+}
+
+async function dataUrlToBitmap(dataUrl: string): Promise<ImageBitmap> {
+  const res = await fetch(dataUrl)
+  return createImageBitmap(await res.blob())
+}
+
+/**
+ * 絵札画像に頭文字バッジを合成した PNG dataURL を返す（印刷用書き出し向け）。
+ * 画像が無い札は renderEfuda で生成してから合成する。バッジ非表示なら元画像をそのまま返す。
+ */
+export async function composeEfudaPng(card: Card, style: Partial<CardStyle> = {}): Promise<string> {
+  const st = { ...DEFAULT_CARD_STYLE, ...style }
+  const src = card.efudaImage ?? (await renderEfuda(card, { emblem: card.meta?.emblem }))
+  const badge = badgeOf(card)
+  if (!badge.show || !card.kana) return src
+  const bitmap = await dataUrlToBitmap(src)
+  const canvas = createCanvas(bitmap.width, bitmap.height)
+  const ctx = canvas.getContext('2d') as CanvasRenderingContext2D
+  ctx.drawImage(bitmap, 0, 0)
+  drawKanaBadge(ctx, card, bitmap.width, bitmap.height, st)
+  bitmap.close?.()
   return toDataUrl(canvas)
 }
 

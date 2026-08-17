@@ -2,9 +2,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useCardSet } from '../hooks/useCardSets'
 import { useServices } from '../ServicesContext'
-import type { Card, CardSet } from '../../domain/card'
+import type { Card, CardSet, KanaBadge } from '../../domain/card'
 import { createEmptyCard, normalizeOrder, validateCardSet } from '../../domain/card'
-import { renderEfuda, renderYomifuda, fileToResizedDataUrl, blobToDataUrl } from '../../generator/renderCard'
+import {
+  renderEfuda,
+  renderYomifuda,
+  composeEfudaPng,
+  fileToResizedDataUrl,
+  blobToDataUrl,
+} from '../../generator/renderCard'
 import { fillMissingImages } from '../../generator/dummy'
 import {
   exportCardSetJson,
@@ -170,18 +176,25 @@ export function EditorPage() {
     updateCard(card.id, { audio: await blobToDataUrl(file) })
   }
 
+  // ---- バッジ一括適用 ----
+  const applyBadgeToAll = (badge: KanaBadge) => {
+    if (!confirm('現在の札のバッジ設定（表示・位置・大きさ）を全ての札に適用しますか？')) return
+    update((s) => ({ ...s, cards: s.cards.map((c) => ({ ...c, kanaBadge: { ...badge } })) }))
+  }
+
   // ---- エクスポート ----
   const base = safeFilename(set.name)
   const exportJson = () =>
     downloadBlob(new Blob([exportCardSetJson(set)], { type: 'application/json' }), `${base}.json`)
   const exportZip = async () => downloadBlob(await exportCardSetZip(set), `${base}.zip`)
   const exportPng = async () => downloadBlob(await exportImagesZip(set), `${base}_images.zip`)
-  const exportCard = (card: Card, what: 'efuda' | 'yomifuda' | 'json') => {
+  const exportCard = async (card: Card, what: 'efuda' | 'yomifuda' | 'json') => {
     const fb = cardFileBase(card, selectedIndex < 0 ? 0 : selectedIndex)
     if (what === 'json') {
       downloadBlob(new Blob([exportCardJson(card)], { type: 'application/json' }), `${fb}.json`)
     } else if (what === 'efuda' && card.efudaImage) {
-      downloadDataUrl(card.efudaImage, `${fb}_efuda.png`)
+      // バッジ表示中なら合成して書き出す
+      downloadDataUrl(await composeEfudaPng(card), `${fb}_efuda.png`)
     } else if (what === 'yomifuda' && card.yomifudaImage) {
       downloadDataUrl(card.yomifudaImage, `${fb}_yomifuda.png`)
     }
@@ -317,7 +330,8 @@ export function EditorPage() {
               onGenerateImage={(w) => void genImagesFor(selected, w)}
               onUploadImage={(w, f) => void uploadImage(selected, w, f)}
               onUploadAudio={(f) => void uploadAudio(selected, f)}
-              onExport={(what) => exportCard(selected, what)}
+              onExport={(what) => void exportCard(selected, what)}
+              onApplyBadgeToAll={applyBadgeToAll}
               busy={!!busy}
             />
           ) : (

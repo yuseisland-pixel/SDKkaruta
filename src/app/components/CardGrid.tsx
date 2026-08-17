@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { FieldCard } from '../../domain/engine'
 import type { GameFeedback } from '../hooks/useGame'
+import { KanaBadgeOverlay } from './KanaBadge'
 
 interface Props {
   field: FieldCard[]
@@ -74,7 +75,10 @@ export function CardGrid({ field, onPick, keepTaken, flash, flashFor, disabled, 
             aria-label={f.card.kana}
           >
             {f.card.efudaImage ? (
-              <img src={f.card.efudaImage} alt={f.card.kana} draggable={false} />
+              <>
+                <img src={f.card.efudaImage} alt={f.card.kana} draggable={false} />
+                <KanaBadgeOverlay card={f.card} />
+              </>
             ) : (
               <span className="placeholder">{f.card.kana}</span>
             )}

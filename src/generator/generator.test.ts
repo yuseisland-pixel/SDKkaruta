@@ -33,6 +33,30 @@ describe('io', () => {
   })
 })
 
+describe('kanaBadge', () => {
+  it('KanaBadgeSchema のデフォルトと badgeOf のフォールバック', async () => {
+    const { KanaBadgeSchema, DEFAULT_KANA_BADGE, badgeOf } = await import('../domain/card')
+    expect(DEFAULT_KANA_BADGE).toEqual({ show: true, x: 0.16, y: 0.12, size: 0.13 })
+    expect(KanaBadgeSchema.parse({ show: false }).x).toBe(0.16)
+    const card = { id: 'c', order: 0, kana: 'あ', yomi: 'x' }
+    expect(badgeOf(card)).toEqual(DEFAULT_KANA_BADGE)
+    expect(badgeOf({ ...card, kanaBadge: { show: false, x: 0.5, y: 0.5, size: 0.1 } }).show).toBe(false)
+  })
+  it('composeEfudaPng: バッジ非表示なら元画像をそのまま返す', async () => {
+    const { composeEfudaPng } = await import('./renderCard')
+    const src = 'data:image/png;base64,AAAA'
+    const card = {
+      id: 'c',
+      order: 0,
+      kana: 'あ',
+      yomi: 'x',
+      efudaImage: src,
+      kanaBadge: { show: false, x: 0.16, y: 0.12, size: 0.13 },
+    }
+    expect(await composeEfudaPng(card)).toBe(src)
+  })
+})
+
 describe('colorForKey', () => {
   it('同じキーは同じ色', () => {
     expect(colorForKey('あ')).toBe(colorForKey('あ'))
