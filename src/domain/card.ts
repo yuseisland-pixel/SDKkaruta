@@ -7,6 +7,19 @@ import { z } from 'zod'
 /** 画像・音声の参照。dataURL / Blob URL / http(s) URL / 相対パスのいずれか */
 export type AssetRef = string
 
+/** 絵札に重ねる頭文字バッジ（丸＋文字）の表示設定 */
+export const KanaBadgeSchema = z.object({
+  show: z.boolean().default(true),
+  /** バッジ中心の X 位置（札幅比 0–1） */
+  x: z.number().min(0).max(1).default(0.16),
+  /** バッジ中心の Y 位置（札高さ比 0–1） */
+  y: z.number().min(0).max(1).default(0.12),
+  /** バッジ半径（札幅比） */
+  size: z.number().min(0.05).max(0.5).default(0.13),
+})
+export type KanaBadge = z.infer<typeof KanaBadgeSchema>
+export const DEFAULT_KANA_BADGE: KanaBadge = KanaBadgeSchema.parse({})
+
 export const CardSchema = z.object({
   id: z.string().min(1),
   /** 並び順（0 始まり） */
@@ -25,8 +38,15 @@ export const CardSchema = z.object({
   audio: z.string().optional(),
   /** 自由メタデータ（解説文・出典など） */
   meta: z.record(z.string(), z.string()).optional(),
+  /** 頭文字バッジ設定（未設定ならデフォルト位置に表示） */
+  kanaBadge: KanaBadgeSchema.optional(),
 })
 export type Card = z.infer<typeof CardSchema>
+
+/** 札のバッジ設定（未設定ならデフォルト） */
+export function badgeOf(card: Card): KanaBadge {
+  return card.kanaBadge ?? DEFAULT_KANA_BADGE
+}
 
 export const VoiceConfigSchema = z.object({
   /** 読み上げ速度（1.0 が標準） */

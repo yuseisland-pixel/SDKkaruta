@@ -7,7 +7,7 @@
 import JSZip from 'jszip'
 import type { Card, CardSet } from '../domain/card'
 import { CardSchema, CardSetSchema, newId, normalizeOrder } from '../domain/card'
-import { blobToDataUrl } from './renderCard'
+import { blobToDataUrl, composeEfudaPng } from './renderCard'
 
 // ===== 札 1 枚単位 =====
 
@@ -126,14 +126,18 @@ export async function importCardSetZip(file: Blob, opts: ImportOptions = {}): Pr
   return set
 }
 
-/** 印刷用 PNG 一括 ZIP */
+/** 印刷用 PNG 一括 ZIP（絵札は頭文字バッジを合成して出力） */
 export async function exportImagesZip(set: CardSet): Promise<Blob> {
   const zip = new JSZip()
-  set.cards.forEach((c, i) => {
+  for (let i = 0; i < set.cards.length; i++) {
+    const c = set.cards[i]
     const base = `${String(i + 1).padStart(3, '0')}_${c.kana}`
-    if (c.efudaImage?.startsWith('data:')) zip.file(`efuda/${base}.png`, dataUrlToBlob(c.efudaImage).blob)
+    if (c.efudaImage?.startsWith('data:')) {
+      const composed = await composeEfudaPng(c)
+      zip.file(`efuda/${base}.png`, dataUrlToBlob(composed).blob)
+    }
     if (c.yomifudaImage?.startsWith('data:')) zip.file(`yomifuda/${base}.png`, dataUrlToBlob(c.yomifudaImage).blob)
-  })
+  }
   return zip.generateAsync({ type: 'blob' })
 }
 

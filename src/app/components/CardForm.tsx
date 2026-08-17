@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react'
-import type { Card } from '../../domain/card'
+import type { Card, KanaBadge } from '../../domain/card'
 import { useServices, useSettings } from '../ServicesContext'
-import { readingTextOf } from '../../domain/card'
+import { readingTextOf, badgeOf, DEFAULT_KANA_BADGE } from '../../domain/card'
+import { KanaBadgeOverlay } from './KanaBadge'
 
 interface Props {
   card: Card
@@ -14,6 +15,7 @@ interface Props {
   onUploadImage: (which: 'efuda' | 'yomifuda', file: File) => void
   onUploadAudio: (file: File) => void
   onExport: (what: 'efuda' | 'yomifuda' | 'json') => void
+  onApplyBadgeToAll: (badge: KanaBadge) => void
   busy?: boolean
 }
 
@@ -108,13 +110,16 @@ export function CardForm(p: Props) {
       <div className="preview-pair">
         <div>
           <div className="small muted">絵札（場に並ぶ）</div>
-          {card.efudaImage ? (
-            <img src={card.efudaImage} alt="絵札" />
-          ) : (
-            <div className="noimg" style={{ aspectRatio: '9/13' }}>
-              未設定
-            </div>
-          )}
+          <div className="efuda-preview" style={{ position: 'relative', aspectRatio: '9/13' }}>
+            {card.efudaImage ? (
+              <img src={card.efudaImage} alt="絵札" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+            ) : (
+              <div className="noimg" style={{ height: '100%' }}>
+                未設定
+              </div>
+            )}
+            <KanaBadgeOverlay card={card} onDrag={(x, y) => p.onChange({ kanaBadge: { ...badgeOf(card), x, y } })} />
+          </div>
           <div className="row" style={{ marginTop: 4 }}>
             <button className="btn small" onClick={() => efudaRef.current?.click()}>
               📁 画像を選ぶ
@@ -167,6 +172,43 @@ export function CardForm(p: Props) {
           />
         </div>
       </div>
+
+      <h3 style={{ marginTop: '1em' }}>頭文字バッジ</h3>
+      <div className="row">
+        <label className="check">
+          <input
+            type="checkbox"
+            checked={badgeOf(card).show}
+            onChange={(e) => p.onChange({ kanaBadge: { ...badgeOf(card), show: e.target.checked } })}
+          />
+          表示する
+        </label>
+        <label className="row small" style={{ gap: '0.4em' }}>
+          大きさ
+          <input
+            type="range"
+            min={0.06}
+            max={0.3}
+            step={0.01}
+            value={badgeOf(card).size}
+            disabled={!badgeOf(card).show}
+            onChange={(e) => p.onChange({ kanaBadge: { ...badgeOf(card), size: Number(e.target.value) } })}
+            style={{ width: '8em' }}
+          />
+        </label>
+        <button
+          className="btn small"
+          onClick={() => p.onChange({ kanaBadge: { ...DEFAULT_KANA_BADGE, show: badgeOf(card).show } })}
+        >
+          位置リセット
+        </button>
+        <button className="btn small" onClick={() => p.onApplyBadgeToAll(badgeOf(card))}>
+          この設定を全札に適用
+        </button>
+      </div>
+      <p className="small muted" style={{ marginTop: 4 }}>
+        バッジは絵札プレビュー上をドラッグして動かせます。画像には焼き込まれず、表示時に重ねられます（PNG 書き出し時は合成）。
+      </p>
 
       <h3 style={{ marginTop: '1em' }}>音声</h3>
       <div className="row">

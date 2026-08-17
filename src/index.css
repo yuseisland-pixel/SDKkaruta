@@ -244,6 +244,34 @@ hr {
   padding: 0.5em 0.8em;
 }
 
+/* 頭文字バッジ（オーバーレイ） */
+.kana-badge {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #fff;
+  border: 0.18em solid var(--accent);
+  color: var(--accent);
+  font-weight: 700;
+  font-family: 'Noto Serif JP', 'Yu Mincho', serif;
+  container-type: size;
+  line-height: 1;
+  user-select: none;
+  z-index: 2;
+}
+.kana-badge > span {
+  font-size: 62cqh;
+}
+.kana-badge.draggable {
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.15);
+}
+.kana-badge.draggable:active {
+  cursor: grabbing;
+}
+
 /* デッキサムネ */
 .deck-thumbs {
   display: flex;
